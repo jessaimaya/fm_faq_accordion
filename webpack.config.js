@@ -1,4 +1,6 @@
 const path = require('path');
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const WasmPackPlugin = require('@wasm-tool/wasm-pack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
@@ -13,19 +15,30 @@ module.exports = (env, argv) => {
     entry: './bootstrap.js',
     output: {
       path: distPath,
-      filename: "todomvc.js",
-      webassemblyModuleFilename: "todomvc.wasm"
+      filename: "init.js",
+      webassemblyModuleFilename: "init.wasm"
     },
     module: {
       rules: [
         {
           test: /\.s[ac]ss$/i,
           use: [
-            'style-loader',
+              MiniCssExtractPlugin.loader,
             'css-loader',
             'sass-loader',
           ],
         },
+        {
+          test: /\.(jpg|png|gif|svg)$/,
+          use: {
+            loader: 'file-loader',
+            options: {
+              name: "[name].[ext]",
+              outputPath: "img",
+              esModule: false
+            }
+          }
+        }
       ],
     },
     plugins: [
@@ -37,8 +50,17 @@ module.exports = (env, argv) => {
       new WasmPackPlugin({
         crateDirectory: ".",
         extraArgs: "--no-typescript",
-      })
+      }),
+      new MiniCssExtractPlugin({
+        filename: "[name].css",
+        chunkFilename: "[id].css"
+      }),
     ],
+    optimization: {
+      minimizer: [
+        new CssMinimizerPlugin(),
+      ]
+    },
     watch: argv.mode !== 'production'
   };
 };
